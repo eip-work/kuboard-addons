@@ -7,7 +7,7 @@
     "maintainer": "shaohq@foxmail.com",
     "scope": "Cluster",
     "description": "基于Prometheus/Grafana提供K8S集群的资源监控能力",
-    "document": "https://github.com/eip-work/kuboard-addons/tree/master/repository/eip-monitor-system/0.1.1",
+    "document": "https://github.com/eip-work/kuboard-addons/tree/master/repository/kuboard-system-monitor/v2.0.0",
     "addonUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v2.0.0/addon.yaml",
     "addonResourceUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v2.0.0/addonResource.yaml"
   }
