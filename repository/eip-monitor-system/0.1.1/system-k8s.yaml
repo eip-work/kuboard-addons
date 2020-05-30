@@ -1,0 +1,944 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: kube-system
+  name: controller-manager
+  labels:
+    k8s-app: kube-controller-manager
+  annotations:
+    prometheus.io/scrape: 'true'
+spec:
+  selector:
+    component: kube-controller-manager
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: kubernetes-components-metrics
+    port: 10252
+    targetPort: 10252
+    protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: kube-system
+  name: kube-scheduler
+  labels:
+    k8s-app: kube-scheduler
+  annotations:
+    prometheus.io/scrape: 'true'
+spec:
+  selector:
+    component: kube-scheduler
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: kubernetes-components-metrics
+    port: 10251
+    targetPort: 10251
+    protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: kube-system
+  name: kube-proxy
+  labels:
+    k8s-app: kube-proxy
+  annotations:
+    prometheus.io/scrape: 'true'
+spec:
+  selector:
+    k8s-app: kube-proxy
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: kubernetes-components-metrics
+    port: 10249
+    targetPort: 10249
+    protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: kube-system
+  name: etcd-cluster
+  labels:
+    component: etcd
+  annotations:
+    prometheus.io/scrape: 'true'
+spec:
+  selector:
+    component: etcd
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: kubernetes-components-metrics
+    port: 2379
+    targetPort: 2379
+    protocol: TCP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitor-grafana
+  namespace: kube-system
+  annotations:
+    k8s.eip.work/workload: monitor-grafana
+    k8s.eip.work/displayName: 性能监控
+    k8s.eip.work/service: ClusterIP
+    k8s.eip.work/ingress: 'false'
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: monitor
+      k8s.eip.work/name: monitor-grafana
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: monitor
+        k8s.eip.work/name: monitor-grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:6.2.5
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /var/lib/grafana
+          name: grafana-storage
+          subPath: grafana
+        env:
+        - name: INFLUXDB_HOST
+          value: monitoring-influxdb
+        - name: GF_SERVER_HTTP_PORT
+          value: "3000"
+        - name: GF_AUTH_BASIC_ENABLED
+          value: "true"
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "true"
+        - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+          value: Viewer
+        - name: GF_SERVER_ROOT_URL
+          value: "%(protocol)s://%(domain)s/eip-monitor/namespace/kube-system/service/monitor-grafana/port/3000"
+        - name: GF_SERVER_ENABLE_GZIP
+          value: "true"
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: jmx09KT23BClpa7xzs
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      volumes:
+      - name: grafana-storage
+        # emptyDir: {}
+        persistentVolumeClaim:
+          claimName: kubernetes-grafana-pvc
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        value: ""
+        effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitor-grafana
+  namespace: kube-system
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/tcp-probe: 'true'
+    prometheus.io/tcp-probe-port: '80'
+  # labels:
+    # For use as a Cluster add-on (https://github.com/kubernetes/kubernetes/tree/master/cluster/addons)
+    # If you are NOT using this as an addon, you should comment out this line.
+    #kubernetes.io/cluster-service: 'true'
+    #kubernetes.io/name: monitoring-grafana
+spec:
+  # type: NodePort
+  # In a production setup, we recommend accessing Grafana through an external Loadbalancer
+  # or through a public IP.
+  # type: LoadBalancer
+  # You could also use NodePort to expose the service at a randomly-generated port
+  # type: NodePort
+  #type: ClusterIP
+  selector:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-grafana
+  ports:
+    - name: grafana
+      port: 3000
+      targetPort: 3000
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitor-prometheus-config
+  namespace: kube-system
+data:
+  prometheus.yml: |-
+    global:
+      scrape_interval:     10s
+      evaluation_interval: 10s
+    scrape_configs:
+    - job_name: 'kubernetes-component-apiservers'
+      kubernetes_sd_configs:
+      - role: endpoints
+      scheme: https
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+        action: keep
+        regex: default;kubernetes;https
+    - job_name: 'kubernetes-component-controller-manager'
+      kubernetes_sd_configs:
+      - role: endpoints
+      scheme: http
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape, __meta_kubernetes_namespace, __meta_kubernetes_service_name]
+        regex: true;kube-system;controller-manager
+        action: keep
+    - job_name: 'kubernetes-component-scheduler'
+      kubernetes_sd_configs:
+      - role: endpoints
+      scheme: http
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape, __meta_kubernetes_namespace, __meta_kubernetes_service_name]
+        regex: true;kube-system;kube-scheduler
+        action: keep
+    - job_name: 'kubernetes-component-proxy'
+      kubernetes_sd_configs:
+      - role: endpoints
+      scheme: http
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape, __meta_kubernetes_namespace, __meta_kubernetes_service_name]
+        regex: true;kube-system;kube-proxy
+        action: keep
+    - job_name: 'kubernetes-component-etcd'
+      kubernetes_sd_configs:
+      - role: endpoints
+      scheme: https
+      tls_config:
+        cert_file: /etc/etcd-certs/server.crt
+        key_file: /etc/etcd-certs/server.key
+        insecure_skip_verify: true
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape, __meta_kubernetes_namespace, __meta_kubernetes_service_name]
+        regex: true;kube-system;etcd-cluster
+        action: keep
+    - job_name: 'kubernetes-node-cadvisor'
+      kubernetes_sd_configs:
+      - role: node
+      scheme: https
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+      - target_label: __address__
+        # 地址替换为kubernetes api service 集群内部域名.
+        replacement: kubernetes.default.svc:443
+      - source_labels: [__meta_kubernetes_node_name]
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+    - job_name: 'kubernetes-node-kubelet'
+      kubernetes_sd_configs:
+      - role: node
+      scheme: https
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+      - target_label: __address__
+        replacement: kubernetes.default.svc:443
+      - source_labels: [__meta_kubernetes_node_name]
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: /api/v1/nodes/${1}/proxy/metrics
+    - job_name: 'kubernetes-node-exporters'
+      kubernetes_sd_configs:
+      - role: endpoints
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape, __meta_kubernetes_namespace, __meta_kubernetes_service_name]
+        regex: true;kube-system;monitor-prometheus-node-exporter
+        action: keep
+      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+        action: replace
+        target_label: __address__
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+      - action: labelmap
+        regex: __meta_kubernetes_service_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_service_name]
+        action: replace
+        target_label: kubernetes_name
+    - job_name: 'kubernetes-service-endpoints'
+      kubernetes_sd_configs:
+      - role: endpoints
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+        action: replace
+        target_label: __scheme__
+        regex: (https?)
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+        action: replace
+        target_label: __address__
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+      - action: labelmap
+        regex: __meta_kubernetes_service_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_service_name]
+        action: replace
+        target_label: kubernetes_name
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape, __meta_kubernetes_namespace, __meta_kubernetes_endpoint_port_name]
+        # 匹配过滤drop掉系统组件服务的监控收集（另外的job会收集这些数据)
+        regex: true;kube-system;kubernetes-components-metrics
+        action: drop
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape, __meta_kubernetes_namespace, __meta_kubernetes_service_name]
+        # 匹配过滤drop掉node-exporter监控指标数据收集（另外的job会收集这些数据）
+        regex: true;kube-system;monitor-prometheus-node-exporter
+        action: drop
+    - job_name: 'applications-service-metrics'
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      kubernetes_sd_configs:
+      - role: endpoints
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape, __meta_kubernetes_service_annotation_prometheus_io_app_metrics]
+        regex: true;true
+        action: keep
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_app_metrics_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_service_annotation_prometheus_io_app_metrics_port]
+        action: replace
+        target_label: __address__
+        regex: (.+);(.+)
+        replacement: $1:$2
+      - action: labelmap
+        regex: __meta_kubernetes_service_annotation_prometheus_io_app_info_(.+)
+    - job_name: 'applications-service-http-probe'
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      kubernetes_sd_configs:
+      - role: service
+      metrics_path: /probe
+      params:
+        module: [http_2xx]
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape, __meta_kubernetes_service_annotation_prometheus_io_http_probe]
+        regex: true;true
+        action: keep
+      - source_labels: [__meta_kubernetes_service_name, __meta_kubernetes_namespace, __meta_kubernetes_service_annotation_prometheus_io_http_probe_port, __meta_kubernetes_service_annotation_prometheus_io_http_probe_path]
+        action: replace
+        target_label: __param_target
+        regex: (.+);(.+);(.+);(.+)
+        replacement: $1.$2:$3$4
+      #- source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_http_probe_path]
+      #  action: replace
+      #  target_label: __param_target
+      #  regex: (.+);(.+)
+      #  replacement: $1$2
+      - target_label: __address__
+        replacement: monitor-blackbox-exporter:9115
+      - source_labels: [__param_target]
+        target_label: instance
+      - action: labelmap
+        regex: __meta_kubernetes_service_annotation_prometheus_io_app_info_(.+)
+      #- source_labels: [__meta_kubernetes_namespace]
+      #  target_label: kubernetes_namespace
+      #- source_labels: [__meta_kubernetes_service_name]
+      #  target_label: kubernetes_name
+    - job_name: 'applications-service-tcp-probe'
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      kubernetes_sd_configs:
+      - role: service
+      metrics_path: /probe
+      params:
+        module: [tcp_connect]
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape, __meta_kubernetes_service_annotation_prometheus_io_tcp_probe]
+        regex: true;true
+        action: keep
+      - source_labels: [__meta_kubernetes_service_name, __meta_kubernetes_namespace, __meta_kubernetes_service_annotation_prometheus_io_tcp_probe_port]
+        action: replace
+        target_label: __param_target
+        regex: (.+);(.+);(.+)
+        replacement: $1.$2:$3
+      #- source_labels: [__address__]
+      #  target_label: __param_target
+      - target_label: __address__
+        replacement: monitor-blackbox-exporter:9115
+      - source_labels: [__param_target]
+        target_label: instance
+      - action: labelmap
+        regex: __meta_kubernetes_service_annotation_prometheus_io_app_info_(.+)
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitor-prometheus
+  namespace: kube-system
+  annotations:
+    k8s.eip.work/workload: monitor-prometheus
+    k8s.eip.work/displayName: 监控指标采集
+    k8s.eip.work/service: ClusterIP
+    k8s.eip.work/ingress: 'false'
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: monitor
+      k8s.eip.work/name: monitor-prometheus
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: monitor
+        k8s.eip.work/name: monitor-prometheus
+    spec:
+      containers:
+      - image: prom/prometheus:v2.10.0
+        name: prometheus
+        command:
+        - "/bin/prometheus"
+        args:
+        - "--config.file=/etc/prometheus/prometheus.yml"
+        - "--storage.tsdb.path=/prometheus"
+        - "--storage.tsdb.retention=168h"
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+        volumeMounts:
+        - mountPath: "/prometheus"
+          name: data
+          subPath: "prometheus"
+        - mountPath: "/etc/prometheus"
+          name: config-volume
+        - mountPath: "/etc/etcd-certs"
+          name: etcd-certs
+        resources:
+          requests:
+            cpu: 200m
+            memory: 200Mi
+          limits:
+            cpu: 1000m
+            memory: 4000Mi
+      serviceAccountName: monitor-prometheus
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      volumes:
+      - name: data
+        # emptyDir: {}
+        persistentVolumeClaim:
+          claimName: kubernetes-prometheus-pvc
+      - name: config-volume
+        configMap:
+          name: monitor-prometheus-config
+      - name: etcd-certs
+        secret:
+          secretName: etcd-certs
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-prometheus
+  name: monitor-prometheus
+  namespace: kube-system
+spec:
+  selector:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-prometheus
+  ports:
+  - name: monitor
+    port: 9090
+    targetPort: 9090
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: monitor-prometheus
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: monitor-prometheus
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: monitor-prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: monitor-prometheus
+subjects:
+- kind: ServiceAccount
+  name: monitor-prometheus
+  namespace: kube-system
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: monitor-prometheus-node-exporter
+  namespace: kube-system
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-prometheus-node-exporter
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: monitor
+      k8s.eip.work/name:  monitor-prometheus-node-exporter
+  template:
+    metadata:
+      name: monitor-prometheus-node-exporter
+      labels:
+        k8s.eip.work/layer: monitor
+        k8s.eip.work/name: monitor-prometheus-node-exporter
+    spec:
+      containers:
+      - image: prom/node-exporter:v0.17.0
+        imagePullPolicy: IfNotPresent
+        name: monitor-prometheus-node-exporter
+        ports:
+        - name: prom-node-exp
+          #^ must be an IANA_SVC_NAME (at most 15 characters, ..)
+          containerPort: 9100
+          hostPort: 9100
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        effect: "NoSchedule"
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/app-metrics: 'true'
+    prometheus.io/app-metrics-path: '/metrics'
+  name: monitor-prometheus-node-exporter
+  namespace: kube-system
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-prometheus-node-exporter
+spec:
+  clusterIP: None
+  ports:
+    - name: monitor-prometheus-node-exporter
+      port: 9100
+      protocol: TCP
+  selector:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-prometheus-node-exporter
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    k8s.eip.work/name: monitor-blackbox-exporter
+  name: monitor-blackbox-exporter
+  namespace: kube-system
+data:
+  blackbox.yml: |-
+    modules:
+      http_2xx:
+        prober: http
+        timeout: 10s
+        http:
+          valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+          valid_status_codes: []
+          method: GET
+          preferred_ip_protocol: "ip4"
+      http_post_2xx: 
+        prober: http
+        timeout: 10s
+        http:
+          valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+          method: POST
+          preferred_ip_protocol: "ip4"
+      tcp_connect:
+        prober: tcp
+        timeout: 10s
+      icmp:
+        prober: icmp
+        timeout: 10s
+        icmp:
+          preferred_ip_protocol: "ip4"
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitor-blackbox-exporter
+  namespace: kube-system
+  annotations:
+    k8s.eip.work/workload: monitor-blackbox-exporter
+    k8s.eip.work/displayName: Blackbox-exporter
+    k8s.eip.work/service: ClusterIP
+    k8s.eip.work/ingress: 'false'
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-blackbox-exporter
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: monitor
+      k8s.eip.work/name: monitor-blackbox-exporter
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: monitor
+        k8s.eip.work/name: monitor-blackbox-exporter
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: blackbox-exporter
+        image: prom/blackbox-exporter:v0.14.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: blackbox-port
+          containerPort: 9115
+        readinessProbe:
+          tcpSocket:
+            port: 9115
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        resources:
+          requests:
+            memory: 50Mi
+            cpu: 100m
+          limits:
+            memory: 60Mi
+            cpu: 200m
+        volumeMounts:
+        - name: config
+          mountPath: /etc/blackbox_exporter
+        args:
+        - --config.file=/etc/blackbox_exporter/blackbox.yml
+        - --log.level=debug
+        - --web.listen-address=:9115
+      volumes:
+      - name: config
+        configMap:
+          name: monitor-blackbox-exporter
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Equal"
+        value: ""
+        effect: "NoSchedule"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-blackbox-exporter
+  name: monitor-blackbox-exporter
+  namespace: kube-system
+  annotations:
+    prometheus.io/scrape: 'true'
+spec:
+  type: ClusterIP
+  selector:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-blackbox-exporter
+  ports:
+  - name: blackbox
+    port: 9115
+    targetPort: 9115
+    protocol: TCP
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+# kubernetes versions before 1.8.0 should use rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: monitor-kube-state-metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: monitor-kube-state-metrics
+subjects:
+- kind: ServiceAccount
+  name: monitor-kube-state-metrics
+  namespace: kube-system
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+# kubernetes versions before 1.8.0 should use rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: monitor-kube-state-metrics
+rules:
+- apiGroups: [""]
+  resources:
+  - configmaps
+  - secrets
+  - nodes
+  - pods
+  - services
+  - resourcequotas
+  - replicationcontrollers
+  - limitranges
+  - persistentvolumeclaims
+  - persistentvolumes
+  - namespaces
+  - endpoints
+  verbs: ["list", "watch"]
+- apiGroups: ["extensions"]
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  - ingresses
+  verbs: ["list", "watch"]
+- apiGroups: ["apps"]
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs: ["list", "watch"]
+- apiGroups: ["batch"]
+  resources:
+  - cronjobs
+  - jobs
+  verbs: ["list", "watch"]
+- apiGroups: ["autoscaling"]
+  resources:
+  - horizontalpodautoscalers
+  verbs: ["list", "watch"]
+- apiGroups: ["policy"]
+  resources:
+  - poddisruptionbudgets
+  verbs: ["list", "watch"]
+- apiGroups: ["certificates.k8s.io"]
+  resources:
+  - certificatesigningrequests
+  verbs: ["list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+# kubernetes versions before 1.8.0 should use rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: monitor-kube-state-metrics
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: monitor-kube-state-metrics-resizer
+subjects:
+- kind: ServiceAccount
+  name: monitor-kube-state-metrics
+  namespace: kube-system
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+# kubernetes versions before 1.8.0 should use rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  namespace: kube-system
+  name: monitor-kube-state-metrics-resizer
+rules:
+- apiGroups: [""]
+  resources:
+  - pods
+  verbs: ["get"]
+- apiGroups: ["apps"]
+  resources:
+  - deployments
+  resourceNames: ["monitor-kube-state-metrics"]
+  verbs: ["get", "update"]
+- apiGroups: ["extensions"]
+  resources:
+  - deployments
+  resourceNames: ["monitor-kube-state-metrics"]
+  verbs: ["get", "update"]
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: monitor-kube-state-metrics
+  namespace: kube-system
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitor-kube-state-metrics
+  namespace: kube-system
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-kube-state-metrics
+  annotations:
+    prometheus.io/scrape: 'true'
+spec:
+  ports:
+  - name: http-metrics
+    port: 8080
+    targetPort: http-metrics
+    protocol: TCP
+  - name: telemetry
+    port: 8081
+    targetPort: telemetry
+    protocol: TCP
+  selector:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-kube-state-metrics
+
+
+---
+apiVersion: apps/v1
+# Kubernetes version 1.8.x should use apps/v1beta2
+# Kubernetes versions before 1.8.0 should use apps/v1beta1 or extensions/v1beta1
+kind: Deployment
+metadata:
+  name: monitor-kube-state-metrics
+  namespace: kube-system
+  annotations:
+    k8s.eip.work/workload: monitor-kube-state-metrics
+    k8s.eip.work/displayName: 监控接收器
+    k8s.eip.work/service: ClusterIP
+    k8s.eip.work/ingress: 'false'
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-kube-state-metrics
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: monitor
+      k8s.eip.work/name: monitor-kube-state-metrics
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: monitor
+        k8s.eip.work/name: monitor-kube-state-metrics
+    spec:
+      serviceAccountName: monitor-kube-state-metrics
+      containers:
+      - name: monitor-kube-state-metrics
+        image: mirrorgooglecontainers/kube-state-metrics:v1.6.0
+        ports:
+        - name: http-metrics
+          containerPort: 8080
+        - name: telemetry
+          containerPort: 8081
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+      - name: addon-resizer
+        image: mirrorgooglecontainers/addon-resizer:1.8.4
+        resources:
+          limits:
+            cpu: 150m
+            memory: 50Mi
+          requests:
+            cpu: 150m
+            memory: 50Mi
+        env:
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        command:
+          - /pod_nanny
+          - --container=monitor-kube-state-metrics
+          - --cpu=100m
+          - --extra-cpu=1m
+          - --memory=100Mi
+          - --extra-memory=2Mi
+          - --threshold=5
+          - --deployment=monitor-kube-state-metrics

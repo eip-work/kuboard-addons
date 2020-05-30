@@ -1,0 +1,262 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: test
+  name: monitor-pinpoint-collector
+  annotations:
+    k8s.eip.work/workload: monitor-pinpoint-collector
+    k8s.eip.work/displayName: 监控接收器
+    k8s.eip.work/service: ClusterIP
+    k8s.eip.work/ingress: 'false'
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-pinpoint-collector
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: monitor
+      k8s.eip.work/name: monitor-pinpoint-collector
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: monitor
+        k8s.eip.work/name: monitor-pinpoint-collector
+    spec:
+      imagePullSecrets:
+        - {}
+      initContainers: []
+      containers:
+        - image: 'pinpointdocker/pinpoint-collector:1.8.4'
+          imagePullPolicy: Always
+          name: monitor-pinpoint-collector
+          env:
+            - name: CLUSTER_ENABLE
+              value: 'false'
+            - name: HBASE_HOST
+              value: monitor-pinpoint-hbase
+            - name: HBASE_PORT
+              value: '2181'
+            - name: FLINK_CLUSTER_ENABLE
+              value: 'false'
+            - name: DEBUG_LEVEL
+              value: INFO
+      volumes: []
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: test
+  name: monitor-pinpoint-collector
+  annotations:
+    k8s.eip.work/workload: monitor-pinpoint-collector
+    k8s.eip.work/displayName: 监控接收器
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-pinpoint-collector
+spec:
+  selector:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-pinpoint-collector
+  type: ClusterIP
+  ports:
+    - port: 9994
+      targetPort: 9994
+      protocol: TCP
+      name: 4wdkba
+      nodePort: 0
+    - port: 9995
+      targetPort: 9995
+      protocol: UDP
+      name: xjrrmp
+      nodePort: 0
+    - port: 9996
+      targetPort: 9996
+      protocol: UDP
+      name: jryepk
+      nodePort: 0
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: test
+  name: monitor-pinpoint-hbase
+  annotations:
+    k8s.eip.work/workload: monitor-pinpoint-hbase
+    k8s.eip.work/displayName: 监控HBase
+    k8s.eip.work/service: ClusterIP
+    k8s.eip.work/ingress: 'false'
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-pinpoint-hbase
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: monitor
+      k8s.eip.work/name: monitor-pinpoint-hbase
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: monitor
+        k8s.eip.work/name: monitor-pinpoint-hbase
+    spec:
+      imagePullSecrets:
+        - {}
+      initContainers: []
+      containers:
+        - image: 'pinpointdocker/pinpoint-hbase:1.8.4'
+          imagePullPolicy: Always
+          name: monitor-pinpoint-hbase
+          volumeMounts:
+            - name: monitor-pinpoint-hbase
+              mountPath: /home/pinpoint
+              subPath: monitor-pinpoint
+          env: []
+      volumes: []
+  replicas: 1
+  volumeClaimTemplates:
+    - metadata:
+        name: monitor-pinpoint-hbase
+        creationTimestamp: null
+        annotations:
+          k8s.eip.work/pvcType: Dynamic
+      spec:
+        accessModes:
+          - ReadWriteMany
+        resources:
+          requests:
+            storage: 2Gi
+        storageClassName: cluster-storage
+        volumeMode: Filesystem
+      status:
+        phase: Pending
+  serviceName: monitor-pinpoint-hbase
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: test
+  name: monitor-pinpoint-hbase
+  annotations:
+    k8s.eip.work/workload: monitor-pinpoint-hbase
+    k8s.eip.work/displayName: 监控HBase
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-pinpoint-hbase
+spec:
+  selector:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-pinpoint-hbase
+  type: ClusterIP
+  ports:
+    - port: 2181
+      targetPort: 2181
+      protocol: TCP
+      name: rtrphd
+      nodePort: 0
+    - port: 60000
+      targetPort: 60000
+      protocol: TCP
+      name: bbtg5j
+      nodePort: 0
+    - port: 16010
+      targetPort: 16010
+      protocol: TCP
+      name: hdpstf
+      nodePort: 0
+    - port: 60020
+      targetPort: 60020
+      protocol: TCP
+      name: hs4ymm
+      nodePort: 0
+    - port: 16030
+      targetPort: 16030
+      protocol: TCP
+      name: ya7jnm
+      nodePort: 0
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: test
+  name: monitor-pinpoint-web
+  annotations:
+    k8s.eip.work/workload: monitor-pinpoint-web
+    k8s.eip.work/displayName: 性能监控及链路追踪
+    k8s.eip.work/service: ClusterIP
+    k8s.eip.work/ingress: 'false'
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-pinpoint-web
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: monitor
+      k8s.eip.work/name: monitor-pinpoint-web
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: monitor
+        k8s.eip.work/name: monitor-pinpoint-web
+    spec:
+      imagePullSecrets:
+        - {}
+      initContainers: []
+      containers:
+        - image: 'pinpointdocker/pinpoint-web:1.8.4'
+          imagePullPolicy: Always
+          name: monitor-pinpoint-web
+          env:
+            - name: CLUSTER_ENABLE
+              value: 'false'
+            - name: ADMIN_PASSWORD
+              value: abcd1234
+            - name: ANALYTICS
+              value: 'true'
+            - name: HBASE_HOST
+              value: monitor-pinpoint-hbase
+            - name: HBASE_PORT
+              value: '2181'
+            - name: DEBUG_LEVEL
+              value: INFO
+            - name: CONFIG_SHOW_APPLICATIONSTAT
+              value: 'true'
+            - name: BATCH_ENABLE
+              value: 'false'
+      volumes: []
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: test
+  name: monitor-pinpoint-web
+  annotations:
+    k8s.eip.work/workload: monitor-pinpoint-web
+    k8s.eip.work/displayName: 性能监控及链路追踪
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-pinpoint-web
+spec:
+  selector:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-pinpoint-web
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: znynn3
+      nodePort: 0
+    - port: 9997
+      targetPort: 9997
+      protocol: TCP
+      name: xdcmrq
+      nodePort: 0

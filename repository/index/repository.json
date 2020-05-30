@@ -1,0 +1,47 @@
+[
+  {
+    "name": "资源层监控套件（K8S v1.13/v1.14）",
+    "id": "eip-monitor-system",
+    "version": "0.1.1",
+    "lastUpdate": "2019-12-11",
+    "maintainer": "shaohq@foxmail.com",
+    "isGlobal": true,
+    "url": "https://addons.kuboard.cn/eip-monitor-system/0.1.1/addon.json"
+  },
+  {
+    "name": "资源层监控套件（K8S v1.15 及以上）",
+    "id": "eip-monitor-system",
+    "version": "0.1.2",
+    "lastUpdate": "2020-02-14",
+    "maintainer": "shaohq@foxmail.com",
+    "isGlobal": true,
+    "url": "https://addons.kuboard.cn/eip-monitor-system/0.1.2/addon.json"
+  },
+  {
+    "name": "Pinpoint 监控套件",
+    "id": "eip-monitor-pinpoint",
+    "version": "0.1.0",
+    "lastUpdate": "2019-07-02",
+    "maintainer": "shaohq@foxmail.com",
+    "isGlobal": false,
+    "url": "https://addons.kuboard.cn/eip-monitor-pinpoint/0.1.0/addon.json"
+  },
+  {
+    "name": "Prometheus for mysql/nginx/jvm",
+    "id": "eip-monitor-prometheus",
+    "version": "0.1.0",
+    "lastUpdate": "2019-07-04",
+    "maintainer": "shaohq@foxmail.com",
+    "isGlobal": false,
+    "url": "https://addons.kuboard.cn/eip-monitor-prometheus/0.1.0/addon.json"
+  },
+  {
+    "name": "Sentinel",
+    "id": "eip-monitor-sentinel",
+    "version": "0.1.0",
+    "lastUpdate": "2019-07-04",
+    "maintainer": "shaohq@foxmail.com",
+    "isGlobal": false,
+    "url": "https://addons.kuboard.cn/eip-monitor-sentinel/0.1.0/addon.json"
+  }
+]

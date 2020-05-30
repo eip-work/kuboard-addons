@@ -1,0 +1,16 @@
+{
+  "name": "资源层监控套件",
+  "id": "eip-monitor-system",
+  "version": "0.1.2",
+  "lastUpdate": "2020-02-14",
+  "maintainer": "shaohq@foxmail.com",
+  "scripts": ["system-addon.js"],
+  "k8s": ["system-k8s.yaml"],
+  "resources": ["resource/1621.json", "resource/1860.json", "resource/3146.json", "resource/8588.json"],
+  "isGlobal": true,
+  "info": {
+    "description": "通过prometheus/grafana监控Kubernetes资源层的信息，包括CPU使用、内存使用、网络使用等信息。",
+    "document": "https://github.com/eip-work/kuboard-addons/tree/master/repository/eip-monitor-system/0.1.2",
+    "important": "适用于 Kubernetes 1.15及以上版本；会出现 etcd-certs Not Found 的错误，参考 https://kuboard.cn/guide/example/monitor.htmll#安装监控套件"
+  }
+}

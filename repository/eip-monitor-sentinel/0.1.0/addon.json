@@ -1,0 +1,19 @@
+{
+  "name": "熔断及限流 Sentinel",
+  "id": "eip-monitor-sentinel",
+  "version": "0.1.0",
+  "lastUpdate": "2019-07-04",
+  "maintainer": "shaohq@foxmail.com",
+  "scripts": ["addon-sentinel.js"],
+  "k8s": ["k8s-sentinel.yaml"],
+  "resources": [],
+  "isGlobal": false,
+  "info": {
+    "install": "",
+    "buttons": "",
+    "context": "",
+    "container": "",
+    "description": "",
+    "document": "https://github.com/eip-work/kuboard-addons/tree/master/repository/eip-monitor-sentinel/0.1.0"
+  }
+}

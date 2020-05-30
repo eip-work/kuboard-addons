@@ -1,0 +1,14 @@
+[
+  {
+    "name": "资源层监控套件",
+    "id": "system-monitor.addons.kuboard.cn",
+    "version": "v2.0.0-beta.2",
+    "lastUpdate": "2020-05-30",
+    "maintainer": "shaohq@foxmail.com",
+    "scope": "Cluster",
+    "description": "基于Prometheus/Grafana提供K8S集群的资源监控能力",
+    "document": "https://github.com/eip-work/kuboard-addons/tree/master/repository/eip-monitor-system/0.1.1",
+    "addonUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v2.0.0/addon.yaml",
+    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v2.0.0/addonResource.yaml"
+  }
+]

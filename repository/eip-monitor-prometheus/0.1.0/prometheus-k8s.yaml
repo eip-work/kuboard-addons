@@ -1,0 +1,292 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitor-grafana
+  namespace: my-namespace
+  annotations:
+    k8s.eip.work/workload: monitor-grafana
+    k8s.eip.work/displayName: 性能监控
+    k8s.eip.work/service: ClusterIP
+    k8s.eip.work/ingress: 'false'
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: monitor
+      k8s.eip.work/name: monitor-grafana
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: monitor
+        k8s.eip.work/name: monitor-grafana
+    spec:
+      initContainers:
+      - name: grafana-chown
+        command: ["chown", "-R", "472:472", "/var/lib/grafana"]
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: grafana-persistent-storage
+          mountPath: /var/lib/grafana
+          subPath: grafana
+      containers:
+      - name: monitor-grafana
+        image: grafana/grafana:6.2.5
+        ports:
+        - containerPort: 3000
+        env:
+        - name: K8S_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: GF_SERVER_ROOT_URL
+          value: "%(protocol)s://%(domain)s/eip-monitor/namespace/${K8S_NAMESPACE}/service/monitor-grafana/port/3000"
+        - name: GF_SERVER_ENABLE_GZIP
+          value: "true"
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "true"
+        - name: GF_AUTH_ANONYMOUS_ORG_NAME
+          value: "Main Org."
+        - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+          value: Viewer
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: jmx09KT23BClpa7xzs
+        volumeMounts:
+        - name: grafana-persistent-storage
+          mountPath: /var/lib/grafana
+          subPath: grafana
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      volumes:
+      - name: grafana-persistent-storage
+        persistentVolumeClaim:
+          claimName: monitor-grafana-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitor-grafana
+  namespace: my-namespace
+  annotations:
+    k8s.eip.work/workload: monitor-grafana
+    k8s.eip.work/displayName: 性能监控
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-grafana
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+  selector:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-grafana
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitor-prometheus-config
+  namespace: my-namespace
+data:
+  prometheus.yml: |-
+    global:
+      scrape_interval:     20s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+      evaluation_interval: 20s # Evaluate rules every 15 seconds. The default is every 1 minute.
+      scrape_timeout:      5s
+      # scrape_timeout is set to the global default (10s).
+
+    # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+    rule_files:
+      # - "first_rules.yml"
+      # - "second_rules.yml"
+
+    # A scrape configuration containing exactly one endpoint to scrape:
+    # Here it's Prometheus itself.
+    scrape_configs:
+      - job_name: 'prometheus'
+        # metrics_path defaults to '/metrics'
+        # scheme defaults to 'http'.
+        static_configs:
+        - targets: ['127.0.0.1:9090']
+
+      - job_name: 'eureka-prometheus'
+        scheme: http
+        metrics_path: '/actuator/prometheus'
+        consul_sd_configs:
+        #consul 地址
+          - server: 'cloud-eureka:9200'
+            scheme: http
+            refresh_interval: 60s
+        relabel_configs:
+          - source_labels: ['__meta_consul_service_address', '__meta_consul_service_metadata_management_port']
+            separator: ':'
+            target_label: '__address__'
+            replacement: '$1$2'
+          - source_labels: ['__meta_consul_service']
+            target_label: 'application'
+            replacement: '$1'
+
+      - job_name: 'eureka-prometheus-none-java'
+        scheme: http
+        consul_sd_configs:
+        #consul 地址
+          - server: 'monitor-eureka:9000'
+            scheme: http
+            refresh_interval: 60s
+        relabel_configs:
+          - source_labels: ['__meta_consul_service_address', '__meta_consul_service_metadata_management_port']
+            separator: ':'
+            target_label: '__address__'
+            replacement: '$1$2'
+          - source_labels: ['__meta_consul_service']
+            target_label: 'application'
+            replacement: '$1'
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: monitor-eureka
+  namespace: my-namespace
+  annotations:
+    k8s.eip.work/workload: monitor-eureka
+    k8s.eip.work/displayName: 监控-服务注册
+    k8s.eip.work/service: ClusterIP
+    k8s.eip.work/ingress: 'false'
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-eureka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: monitor
+      k8s.eip.work/name: monitor-eureka
+  serviceName: monitor-eureka
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: monitor
+        k8s.eip.work/name: monitor-eureka
+    spec:
+      containers:
+      - name: monitor-eureka
+        image: eipwork/eip-monitor-eureka:1.0.0
+        imagePullPolicy: Always
+        env:
+        - name: MONITOR_EUREKA_DEFAULT_ZONE
+          value: http://monitor-eureka-0.monitor-eureka:9000/eureka/,http://monitor-eureka-1.monitor-eureka:9000/eureka/
+        - name: eureka.server.enable-self-preservation
+          value: "false"
+  volumeClaimTemplates: []
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitor-eureka
+  namespace: my-namespace
+  annotations:
+    k8s.eip.work/workload: monitor-eureka
+    k8s.eip.work/displayName: 监控-服务注册
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-eureka
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9000
+    targetPort: 9000
+  selector:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-eureka
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitor-prometheus
+  namespace: my-namespace
+  annotations:
+    k8s.eip.work/workload: monitor-prometheus
+    k8s.eip.work/displayName: 性能指标采集
+    k8s.eip.work/service: ClusterIP
+    k8s.eip.work/ingress: 'false'
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: monitor
+      k8s.eip.work/name: monitor-prometheus
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: monitor
+        k8s.eip.work/name: monitor-prometheus
+    spec:
+      containers:
+      - name: monitor-prometheus
+        image: prom/prometheus:v2.10.0
+        command:
+        - "/bin/prometheus"
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+        args:
+        - "--config.file=/etc/prometheus/prometheus.yml"
+        - "--storage.tsdb.path=/prometheus"
+        - "--storage.tsdb.retention=48h"
+        volumeMounts:
+        - mountPath: "/prometheus"
+          name: data
+        - mountPath: "/etc/prometheus"
+          name: config-volume
+        resources:
+          requests:
+            cpu: 200m
+            memory: 200Mi
+          limits:
+            cpu: 1000m
+            memory: 4000Mi
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: monitor-prometheus-pvc
+      - name: config-volume
+        configMap:
+          name: monitor-prometheus-config
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitor-prometheus
+  namespace: my-namespace
+  annotations:
+    k8s.eip.work/workload: monitor-prometheus
+    k8s.eip.work/displayName: 性能指标采集
+  labels:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-prometheus
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9090
+    targetPort: 9090
+  selector:
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-prometheus

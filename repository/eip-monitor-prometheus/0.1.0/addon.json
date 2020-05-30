@@ -1,0 +1,19 @@
+{
+  "name": "Prometheus监控套件（mysql/nginx/jvm）",
+  "id": "eip-monitor-prometheus",
+  "version": "0.1.0",
+  "lastUpdate": "2019-07-04",
+  "maintainer": "shaohq@foxmail.com",
+  "scripts": ["addon-jvm.js", "addon-mysql.js", "addon-nginx.js"],
+  "k8s": ["prometheus-k8s.yaml"],
+  "resources": ["resource/2949.json", "resource/4701.json", "resource/7362.json"],
+  "isGlobal": false,
+  "info": {
+    "install": "",
+    "buttons": "",
+    "context": "",
+    "container": "",
+    "description": "",
+    "document": "https://github.com/eip-work/kuboard-addons/tree/master/repository/eip-monitor-prometheus/0.1.0"
+  }
+}

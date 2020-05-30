@@ -1,0 +1,18 @@
+{
+  "name": "Pinpoint 监控套件",
+  "id": "eip-monitor-pinpoint",
+  "version": "0.1.0",
+  "lastUpdate": "2019-07-02",
+  "maintainer": "shaohq@foxmail.com",
+  "scripts": ["pinpoint-addon.js"],
+  "k8s": ["pinpoint-k8s.yaml"],
+  "isGlobal": false,
+  "info": {
+    "install": "安装 Pinpoint Hbase, Pinpoint Collector, Pinpoint Web",
+    "buttons": "在容器级别添加 '链路追踪' 按钮",
+    "context": "部署时添加 annotation： k8s.eip.work/monitor=Pinpoint",
+    "container": "容器中的应用程序必须是Java，且配置了 -javaagent",
+    "description": "使用 Pinpoint 对微服务进行链路追踪",
+    "document": "https://github.com/eip-work/kuboard-addons/tree/master/repository/eip-monitor-pinpoint/0.1.0"
+  }
+}
