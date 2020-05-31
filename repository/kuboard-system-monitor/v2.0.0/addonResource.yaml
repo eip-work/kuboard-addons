@@ -23958,13 +23958,13 @@
               - name: GF_AUTH_ANONYMOUS_ENABLED
                 value: "${GF_AUTH_ANONYMOUS_ENABLED}"
               - name: GF_AUTH_ANONYMOUS_ORG_ROLE
-                value: Viewer
+                value: ${GF_AUTH_ANONYMOUS_ORG_ROLE}
               - name: GF_SERVER_ROOT_URL
                 value: "/proxy/http/kube-system/monitor-grafana/:/3000/"
               - name: GF_SERVER_ENABLE_GZIP
                 value: "${GF_SERVER_ENABLE_GZIP}"
               - name: GF_SECURITY_ADMIN_USER
-                value: kuboard-user
+                value: ${GF_SECURITY_ADMIN_USER}
             securityContext:
               runAsNonRoot: false
               runAsUser: 0
@@ -24912,17 +24912,16 @@
   kind: KuboardAddonResource
   lifecycleHandler:
     additionalStep: >-
-      <div style="font-size: 14px; color: red; font-weight: 500">
-        必须在 master 上执行（或者可以提供 server.crt、 server.key 文件）
-      </div>
+      <li style="font-size: 14px; color: red; font-weight: 500">
+        GF_SECURITY_ADMIN_USER 参数的取值与当前登录 Kuboard 的用户名一致
+      </li>
   
-      <code>
-  
-      kubectl -n kube-system create secret generic etcd-certs
-      --from-file=/etc/kubernetes/pki/etcd/server.crt
-      --from-file=/etc/kubernetes/pki/etcd/server.key
-  
-      </code>
+      <li style="font-size: 14px; color: red; font-weight: 500">
+        在 master 上执行如下指令（或者可以提供 server.crt、 server.key 文件）
+        <code style="margin-left: 20px;">
+        kubectl -n kube-system create secret generic etcd-certs --from-file=/etc/kubernetes/pki/etcd/server.crt --from-file=/etc/kubernetes/pki/etcd/server.key
+        </code>
+      </li>
     beforeUninstall: slfdsdfxxx
     disable: sklxxirr
     initialize: "import { startInitTasks, completeInitTask, failInitTask, KuboardProxy } from '/addon-api/index.js'\n\nlet grafanaHttp\n\nfunction initGrafanaDashboard (initContext, resourceName, dataSource) {\n  let dashboardCreate = {\n    dashboard: JSON.parse(initContext.initResources[resourceName]),\n    folderId: 0,\n    inputs: [{name: dataSource, type: \"datasource\", pluginId: \"prometheus\", value: \"Prometheus\"}],\n    overwrite: true\n  }\n  grafanaHttp.execute({\n  \tmethod: 'post',\n    url: '/api/dashboards/import',\n    data: dashboardCreate\n  }).then(resp => {\n    completeInitTask(resourceName)\n  }).catch(e => {\n    failInitTask(resourceName, e)\n  })\n}\n\nfunction initGf (initContext) {\n  initGrafanaDashboard(initContext, '1621.json', 'DS_PROMETHEUS')\n\tinitGrafanaDashboard(initContext, '1860.json', 'DS_LOCALHOST')\n\tinitGrafanaDashboard(initContext, '3146.json', 'DS_PROMETHEUS')\n  initGrafanaDashboard(initContext, '8588.json', 'DS_PROMETHEUS') \n}\n\nexport function initializeKuboardAddon (initContext) {\n  grafanaHttp = new KuboardProxy({\n    namespace: initContext.namespace,\n    service: 'monitor-grafana',\n    port: '3000',\n    protocol: 'http://',\n  })\n  \n  startInitTasks([\n    {name: 'checkDs', description: '检查 Datasource 是否存在', descriptionEn: 'Check if datasource exists.'},\n    {name: '1621.json', description: '初始化 dashboard 1621.json', descriptionEn: 'Initialize dashboard 1621.json'},\n    {name: '1860.json', description: '初始化 dashboard 1860.json', descriptionEn: 'Initialize dashboard 1860.json'},\n    {name: '3146.json', description: '初始化 dashboard 3146.json', descriptionEn: 'Initialize dashboard 3146.json'},\n    {name: '8588.json', description: '初始化 dashboard 3146.json', descriptionEn: 'Initialize dashboard 8588.json'},\n  ])\n  grafanaHttp.execute({\n  \tmethod: 'get',\n    url: '/api/datasources'\n  }).then(resp => {\n    let creatingDatasource = true\n    for (let item of resp.data) {\n      if (item.url === 'http://monitor-prometheus:9090') {\n        creatingDatasource = false\n      }\n    }\n    if (creatingDatasource) {\n      let datasource = {\n        \"name\": \"Prometheus\",\n        \"type\": \"prometheus\",\n        \"url\": \"http://monitor-prometheus:9090\",\n        \"orgId\": 1,\n        \"access\":\"proxy\",\n        \"basicAuth\":false,\n        \"readOnly\": false,\n        \"password\": ''\n      }\n      grafanaHttp.execute({\n      \tmethod: 'post',\n        url: '/api/datasources',\n        data: datasource\n      }).then(resp => {\n        completeInitTask('checkDs')\n        initGf(initContext)\n      }).catch(e => {\n        console.error(e)\n        failInitTask('checkDs', e)\n      })\n    } else {\n      completeInitTask('checkDs')\n      initGf(initContext)\n    }\n  }).catch(e => {\n    failInitTask('checkDs', e)\n  })\n}"
@@ -24930,25 +24929,43 @@
       - k8s.yaml
       - k8s-2.yaml
   parameters:
-    - description: Enable anonymous user
+    - default: kuboard-user
+      description: Grafana 管理员用户名，必须和当前登录 Kuboard 的用户名一致才可以完成安装
+      descriptionEn: Grafana Administrator user name, should be the same user name with the current Kuboard login
+      name: GF_SECURITY_ADMIN_USER
+      required: true
+      type: string
+      value: kuboard-user
+    - description: Grafana 启用匿名用户
+      descriptionEn: Grafana Enable anonymous user
       name: GF_AUTH_ANONYMOUS_ENABLED
       required: true
       type: boolean
       value: true
-    - default: '7.0.1'
-      description: 'Grafana version, >= 6.2.5'
-      name: GF_VERSION
+    - default: Viewer
+      description: 匿名用户角色
+      descriptionEn: Anonymous role org role
+      name: GF_AUTH_ANONYMOUS_ORG_ROLE
       required: true
       type: string
-      value: '7.0.1'
+      value: Viewer
     - default: 'true'
-      description: Grafana enable gzip
+      description: Grafana 开启 gzip
+      descriptionEn: Grafana enable gzip
       name: GF_SERVER_ENABLE_GZIP
       required: true
       type: boolean
       value: true
+    - default: 7.0.1
+      description: 'Grafana 的版本号, 不低于 6.2.5'
+      descriptionEn: 'Grafana version, >= 6.2.5'
+      name: GF_VERSION
+      required: true
+      type: string
+      value: 7.0.1
     - default: 'true'
-      description: 'Prometheus Version, >= v2.10.1'
+      description: 'Prometheus 的版本号, 不低于 v2.10.1'
+      descriptionEn: 'Prometheus Version, >= v2.10.1'
       name: PROMETHEUS_VERSION
       required: true
       type: string
