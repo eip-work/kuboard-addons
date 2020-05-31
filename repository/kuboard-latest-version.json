@@ -4,8 +4,8 @@
     "releaseNote": "https://kuboard.cn/support/change-log/v2.0.x.html",
     "channel": {
       "canary": {
-        "version": "v2.0.0-beta.1",
-        "buildDate": "2020-05-16 23:22:55",
+        "version": "v2.0.0-beta.3.b",
+        "buildDate": "2020-05-31 09:32:25",
         "applyToK8sVersion": "v1.16",
         "breakingUpgrade": "https://kuboard.cn/support/change-log/upgrade-1-2.html"
       },
@@ -14,8 +14,8 @@
         "buildDate": "2020-05-16 19:47:39"
       },
       "beta": {
-        "version": "v2.0.0-beta.2.c",
-        "buildDate": "2020-05-24 22:20:14"
+        "version": "v2.0.0-beta.3.b",
+        "buildDate": "2020-05-31 09:32:25"
       },
       "arm": {
         "version": "v1.0.9.7-arm",
