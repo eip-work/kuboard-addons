@@ -1,0 +1,50 @@
+---
+apiVersion: kuboard.cn/v1
+kind: KuboardAddon
+spec:
+  authTarget:
+    apiGroup: ''
+    name: kuboard-loki-grafana
+    namespace: kube-system
+    namespaced: true
+    resource: services
+    verb: get
+  extensions:
+    - extensionParams:
+        buttonIcon: el-icon-postcard
+        buttonText: 容器组日志
+        buttonTextEn: Pod Logs
+        buttonType: primary
+        handler: "import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'\n\nexport function onClick({context, callback}) {\n  // do your logic\n  let grafanaHttp = new KuboardProxy({\n  \tnamespace: 'kube-system',\n    service: 'kuboard-loki-grafana',\n    port: '3000',\n    protocol: 'http://'\n  })\n  grafanaHttp.execute({\n  \tmethod: 'get',\n    url: '/api/datasources'\n  }).then(resp => {\n    console.log(context)\n    for (let item of resp.data) {\n      if (item.url === 'http://kuboard-loki:3100') {\n        let url = '/proxy/http/kube-system/kuboard-loki-grafana/:/3000'\n        url += `/explore?orgId=${item.id}&kiosk=tv&left=%5B\"now-5m\",\"now\",\"Loki\",%7B\"expr\":\"%7Bnamespace%3D%5C\"${context.pod.metadata.namespace}%5C\",pod%3D%5C\"${context.pod.metadata.name}%5C\"%7D\"%7D,%7B\"mode\":\"Logs\"%7D,%7B\"ui\":%5Btrue,true,true,\"none\"%5D%7D%5D`\n        openUrlInBlank(url)\n        return callback()\n      }\n    }\n    return callback('未找到 url 为 http://kuboard-loki:3000 的 Datasource')\n  }).catch(e => {\n    callback('打开Grafana失败', e)\n  })\n}\n"
+        isEnabledFor: |
+          export function isEnabledFor (context) {
+            return true
+          }
+      extensionPoint: pod-context.extension-point.kuboard.cn
+      id: pod-logs
+    - extensionParams:
+        buttonIcon: el-icon-postcard
+        buttonText: 容器日志
+        buttonTextEn: Container Logs
+        buttonType: primary
+        handler: "import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'\n\nexport function onClick({context, callback}) {\n  // do your logic\n  let grafanaHttp = new KuboardProxy({\n  \tnamespace: 'kube-system',\n    service: 'kuboard-loki-grafana',\n    port: '3000',\n    protocol: 'http://'\n  })\n  grafanaHttp.execute({\n  \tmethod: 'get',\n    url: '/api/datasources'\n  }).then(resp => {\n    console.log(context)\n    for (let item of resp.data) {\n      if (item.url === 'http://kuboard-loki:3100') {\n        let url = '/proxy/http/kube-system/kuboard-loki-grafana/:/3000'\n        url += `/explore?orgId=${item.id}&kiosk=tv&left=%5B\"now-5m\",\"now\",\"Loki\",%7B\"expr\":\"%7Bnamespace%3D%5C\"${context.pod.metadata.namespace}%5C\",pod%3D%5C\"${context.pod.metadata.name}%5C\",container%3D%5C\"${context.container.name}%5C\"%7D\"%7D,%7B\"mode\":\"Logs\"%7D,%7B\"ui\":%5Btrue,true,true,\"none\"%5D%7D%5D`\n        \n        openUrlInBlank(url)\n        return callback()\n      }\n    }\n    return callback('未找到 url 为 http://kuboard-loki:3000 的 Datasource')\n  }).catch(e => {\n    callback('打开Grafana失败', e)\n  })\n}\n"
+        isEnabledFor: |
+          export function isEnabledFor (context) {
+            return true
+          }
+      extensionPoint: container-context.extension-point.kuboard.cn
+      id: container-logs
+  quickLinks:
+    - kuboardProxy:
+        namespace: kube-system
+        port: '3000'
+        protocol: 'http://'
+        service: kuboard-loki-grafana
+      links:
+        - target: _blank
+          text: Grafana 主页
+          textEn: Grafana Home Page
+          url: /
+  scope: Cluster
+status:
+  status: LOADED
