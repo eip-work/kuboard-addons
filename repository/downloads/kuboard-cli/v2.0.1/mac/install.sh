@@ -9,7 +9,7 @@ echo
 echo "install script loaded, start to download kuboard-cli binary."
 echo
 
-_do wget https://addons.kuboard.cn/downloads/kuboard-cli/v2.0.1/mac/kuboard-cli.zip.bin
+_do wget https://dl.kuboard.cn/downloads/kuboard-cli/mac/kuboard-cli.zip.bin
 
 _do mv ./kuboard-cli.zip.bin ./kuboard-cli.zip
 
@@ -26,4 +26,6 @@ rm ./kuboard-cli.zip
 echo
 echo
 
-echo "Congratulations! kuboard-cli is already installed at /usr/local/bin/kuboard-cli. Now, you can use it following the tips in Kuboard UI."
+echo "Congratulations!"
+echo "kuboard-cli is installed at /usr/local/bin/kuboard-cli." 
+echo "Now, you can use it following the tips in Kuboard UI."

@@ -637,7 +637,7 @@
                 name: config
               - mountPath: /run/promtail
                 name: run
-              - mountPath: /var/lib/docker/containers
+              - mountPath: ${DOCKER_ROOT_DIR}/containers
                 name: docker
                 readOnly: true
               - mountPath: /var/log/pods

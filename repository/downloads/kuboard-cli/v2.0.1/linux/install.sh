@@ -1,20 +1,26 @@
 #!/bin/bash
 
-function _do()
-{
-  "$@" || { alert "exec failed: ""$@"; exit -1; }
-}
-
 echo
 echo "install script loaded, start to download kuboard-cli binary."
 echo
 
-_do curl -O https://addons.kuboard.cn/downloads/kuboard-cli/v2.0.1/linux/kuboard-cli
+wget https://dl.kuboard.cn/downloads/kuboard-cli/linux/kuboard-cli.zip.bin
 
-_do chmod a+x ./kuboard-cli
+mv ./kuboard-cli.zip.bin ./kuboard-cli.zip
+
+unzip ./kuboard-cli.zip
+
+chmod a+x ./kuboard-cli
 
 rm /usr/local/bin/kuboard-cli || true
 
-_do mv ./kuboard-cli /usr/local/bin
+mv ./kuboard-cli /usr/local/bin
 
-echo "kuboard-cli is already installed at /usr/local/bin/kuboard-cli. Now, you can use it by following the tips in Kuboard UI."
+rm ./kuboard-cli.zip
+
+echo
+echo
+
+echo "Congratulations!"
+echo "kuboard-cli is installed at /usr/local/bin/kuboard-cli." 
+echo "Now, you can use it following the tips in Kuboard UI."
