@@ -159,4 +159,4 @@ spec:
   ports:
   - port: 443
     protocol: TCP
-    targetPort: main-port
+    targetPort: 4443

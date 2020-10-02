@@ -22,5 +22,29 @@
     "document": "https://addons.kuboard.cn/kuboard-loki/v2.0.2/README.md",
     "addonUrl": "https://addons.kuboard.cn/kuboard-loki/v2.0.2/addon.yaml",
     "addonResourceUrl": "https://addons.kuboard.cn/kuboard-loki/v2.0.2/addonResource.yaml"
+  },
+  {
+    "name": "存储卷浏览器",
+    "id": "pv-browser.addons.kuboard.cn",
+    "version": "v1.0.1",
+    "lastUpdate": "2020-09-11",
+    "maintainer": "shaohq@foxmail.com",
+    "scope": "Cluster",
+    "description": "在集群概览页显示存储卷的利用率，查看存储卷内文件内容",
+    "document": "https://addons.kuboard.cn/kuboard-pv-browser/v1.0.1/README.md",
+    "addonUrl": "https://addons.kuboard.cn/kuboard-pv-browser/v1.0.1/addon.yaml",
+    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-pv-browser/v1.0.1/addonResource.yaml"
+  },
+  {
+    "name": "CSI快照控制器",
+    "id": "csi-external-snapshotter.addons.kuboard.cn",
+    "version": "v1.0.0",
+    "lastUpdate": "2020-10-02",
+    "maintainer": "shaohq@foxmail.com",
+    "scope": "Cluster",
+    "description": "配合ceph-csi控制器为PVC创建快照",
+    "document": "https://addons.kuboard.cn/kuboard-csi-external-snapshotter/v1.0.0/README.md",
+    "addonUrl": "https://addons.kuboard.cn/kuboard-csi-external-snapshotter/v1.0.0/addon.yaml",
+    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-csi-external-snapshotter/v1.0.0/addonResource.yaml"
   }
 ]

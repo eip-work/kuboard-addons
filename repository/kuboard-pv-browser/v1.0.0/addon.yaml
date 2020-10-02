@@ -1,0 +1,9 @@
+---
+apiVersion: kuboard.cn/v1
+kind: KuboardAddon
+metadata:
+  name: pv-browser.addons.kuboard.cn
+  namespace: kube-system
+spec:
+  scope: Cluster
+  extensions: []

@@ -74,7 +74,7 @@ subjects:
   namespace: kube-system
   
 ---
-apiVersion: apiregistration.k8s.io/v1beta1
+apiVersion: apiregistration.k8s.io/v1
 kind: APIService
 metadata:
   name: v1beta1.metrics.k8s.io
@@ -82,6 +82,7 @@ spec:
   service:
     name: metrics-server
     namespace: kube-system
+    port: 443
   group: metrics.k8s.io
   version: v1beta1
   insecureSkipTLSVerify: true
@@ -160,4 +161,4 @@ spec:
   ports:
   - port: 443
     protocol: TCP
-    targetPort: main-port
+    targetPort: 4443
