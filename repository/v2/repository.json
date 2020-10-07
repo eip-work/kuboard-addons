@@ -36,15 +36,15 @@
     "addonResourceUrl": "https://addons.kuboard.cn/kuboard-pv-browser/v1.0.1/addonResource.yaml"
   },
   {
-    "name": "CSI快照控制器",
+    "name": "CSI快照控制器_k8s>=1.17",
     "id": "csi-external-snapshotter.addons.kuboard.cn",
-    "version": "v1.0.0",
-    "lastUpdate": "2020-10-02",
+    "version": "v1.0.1",
+    "lastUpdate": "2020-10-06",
     "maintainer": "shaohq@foxmail.com",
     "scope": "Cluster",
     "description": "配合ceph-csi控制器为PVC创建快照",
-    "document": "https://addons.kuboard.cn/kuboard-csi-external-snapshotter/v1.0.0/README.md",
-    "addonUrl": "https://addons.kuboard.cn/kuboard-csi-external-snapshotter/v1.0.0/addon.yaml",
-    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-csi-external-snapshotter/v1.0.0/addonResource.yaml"
+    "document": "https://addons.kuboard.cn/kuboard-csi-external-snapshotter/v1.0.1/README.md",
+    "addonUrl": "https://addons.kuboard.cn/kuboard-csi-external-snapshotter/v1.0.1/addon.yaml",
+    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-csi-external-snapshotter/v1.0.1/addonResource.yaml"
   }
 ]
