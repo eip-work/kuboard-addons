@@ -1,5 +1,17 @@
 [
   {
+    "name": "资源层监控套件",
+    "id": "system-monitor.addons.kuboard.cn",
+    "version": "v3.0.0",
+    "lastUpdate": "2020-12-13",
+    "maintainer": "shaohq@foxmail.com",
+    "scope": "Cluster",
+    "description": "基于Prometheus/Grafana提供K8S集群的资源监控能力",
+    "document": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.0/README.md",
+    "addonUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.0/addon.yaml",
+    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.0/addonResource.yaml"
+  },
+  {
     "name": "日志聚合套件",
     "id": "logs-loki.addons.kuboard.cn",
     "version": "v3.0.0",
