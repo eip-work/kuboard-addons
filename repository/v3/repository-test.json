@@ -14,14 +14,14 @@
   {
     "name": "日志聚合套件",
     "id": "logs-loki.addons.kuboard.cn",
-    "version": "v3.0.0",
-    "lastUpdate": "2020-12-05",
+    "version": "v3.0.2",
+    "lastUpdate": "2020-12-27",
     "maintainer": "shaohq@foxmail.com",
     "scope": "Cluster",
     "description": "基于Grafana/Loki/Promtail提供集群级别的日志聚合",
-    "document": "https://addons.kuboard.cn/kuboard-loki/v3.0.0/README.md",
-    "addonUrl": "https://addons.kuboard.cn/kuboard-loki/v3.0.0/addon.yaml",
-    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-loki/v3.0.0/addonResource.yaml"
+    "document": "https://addons.kuboard.cn/kuboard-loki/v3.0.2/README.md",
+    "addonUrl": "https://addons.kuboard.cn/kuboard-loki/v3.0.2/addon.yaml",
+    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-loki/v3.0.2/addonResource.yaml"
   },
   {
     "name": "存储卷浏览器",

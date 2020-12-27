@@ -32,7 +32,7 @@ k8sYamls:
         spec:
           containers:
           - name: grafana
-            image: grafana/grafana:7.3.4
+            image: grafana/grafana:7.3.5
             imagePullPolicy: IfNotPresent
             ports:
             - containerPort: 3000
@@ -131,7 +131,7 @@ k8sYamls:
       namespace: kuboard
     spec:
       podManagementPolicy: OrderedReady
-      replicas: ${LOKI_REPLICAS}
+      replicas: 1
       revisionHistoryLimit: 10
       selector:
         matchLabels:
@@ -153,7 +153,7 @@ k8sYamls:
           containers:
           - args:
             - -config.file=/etc/loki/loki.yaml
-            image: grafana/loki:1.6.1
+            image: grafana/loki:2.1.0
             imagePullPolicy: IfNotPresent
             livenessProbe:
               failureThreshold: 3
@@ -614,7 +614,7 @@ k8sYamls:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
-            image: grafana/promtail:1.6.1
+            image: grafana/promtail:2.1.0
             imagePullPolicy: IfNotPresent
             name: promtail
             ports:
@@ -702,13 +702,13 @@ parameters:
     required: true
     type: string
     value: /var/lib/docker
-  - default: '3'
-    description: Loki 副本数量
-    descriptionEn: Loki replicas
-    name: LOKI_REPLICAS
-    required: true
-    type: integer
-    value: '3'
+  # - default: '3'
+  #   description: Loki 副本数量
+  #   descriptionEn: Loki replicas
+  #   name: LOKI_REPLICAS
+  #   required: true
+  #   type: integer
+  #   value: '3'
   - default: kuboard-admin
     description: Grafana 管理员用户
     descriptionEn: Garafana Adminitrator
