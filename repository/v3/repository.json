@@ -2,38 +2,38 @@
   {
     "name": "资源层监控套件",
     "id": "system-monitor.addons.kuboard.cn",
-    "version": "v3.0.0",
-    "lastUpdate": "2020-12-13",
+    "version": "v3.0.1",
+    "lastUpdate": "2020-12-31",
     "maintainer": "shaohq@foxmail.com",
     "scope": "Cluster",
     "description": "基于Prometheus/Grafana提供K8S集群的资源监控能力",
-    "document": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.0/README.md",
-    "addonUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.0/addon.yaml",
-    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.0/addonResource.yaml"
+    "document": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.1/README.md",
+    "addonUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.1/addon.yaml",
+    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.1/addonResource.yaml"
   },
   {
     "name": "日志聚合套件",
     "id": "logs-loki.addons.kuboard.cn",
-    "version": "v3.0.2",
-    "lastUpdate": "2020-12-27",
+    "version": "v3.0.3",
+    "lastUpdate": "2020-12-30",
     "maintainer": "shaohq@foxmail.com",
     "scope": "Cluster",
     "description": "基于Grafana/Loki/Promtail提供集群级别的日志聚合",
-    "document": "https://addons.kuboard.cn/kuboard-loki/v3.0.2/README.md",
-    "addonUrl": "https://addons.kuboard.cn/kuboard-loki/v3.0.2/addon.yaml",
-    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-loki/v3.0.2/addonResource.yaml"
+    "document": "https://addons.kuboard.cn/kuboard-loki/v3.0.3/README.md",
+    "addonUrl": "https://addons.kuboard.cn/kuboard-loki/v3.0.3/addon.yaml",
+    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-loki/v3.0.3/addonResource.yaml"
   },
   {
     "name": "存储卷浏览器",
     "id": "pv-browser.addons.kuboard.cn",
-    "version": "v3.0.0",
+    "version": "v3.0.1",
     "lastUpdate": "2020-11-26",
     "maintainer": "shaohq@foxmail.com",
     "scope": "Cluster",
     "description": "在集群概览页显示存储卷的利用率，查看存储卷内文件内容",
-    "document": "https://addons.kuboard.cn/kuboard-pv-browser/v3.0.0/README.md",
-    "addonUrl": "https://addons.kuboard.cn/kuboard-pv-browser/v3.0.0/addon.yaml",
-    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-pv-browser/v3.0.0/addonResource.yaml"
+    "document": "https://addons.kuboard.cn/kuboard-pv-browser/v3.0.1/README.md",
+    "addonUrl": "https://addons.kuboard.cn/kuboard-pv-browser/v3.0.1/addon.yaml",
+    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-pv-browser/v3.0.1/addonResource.yaml"
   },
   {
     "name": "CSI快照控制器_k8s>=1.17",

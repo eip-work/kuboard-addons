@@ -1,0 +1,983 @@
+apiVersion: kuboard.cn/v1
+kind: KuboardAddon
+metadata:
+  name: system-monitor.addons.kuboard.cn
+  namespace: kuboard
+spec:
+  buttonIcon: el-icon-data-line
+  extensions:
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 节点资源监控
+      buttonTextEn: MonitorNodeResources
+      buttonType: primary
+      handler: "import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'\n\nexport
+        function onClick ({context, callback}) {\n  let grafanaHttp = new KuboardProxy({\n
+        \   namespace: 'kuboard',\n    service: 'grafana',\n    port: 3000,\n    protocol:
+        'http://'\n  })\n  grafanaHttp.execute({\n    method: 'get',\n    url: '/api/search?mode=tree&query=Nodes&skipRecent=true&skipStarred=true&starred=false'\n
+        \ }).then(resp => {\n  \tfor (let item of resp.data) {\n      if (item.uri
+        === 'db/nodes') {\n        return Promise.resolve(item.url)\n      }\n    }\n
+        \   return Promise.reject('未找到 dashbord: db/node-exporter-full')\n  }).catch(e
+        => {\n    callback('调用 grafana 接口失败: ' + e)\n  }).then(dashboardUrl => {\n
+        \   let url = `${dashboardUrl}?orgId=1&var-instance=${context.node.metadata.name}&from=now-1h&to=now&kiosk=tv&refresh=10s`\n
+        \   openUrlInBlank(url)\n    callback()\n  }).catch(e => {\n  \tcallback('打开页面失败',
+        e)\n  })\n}\n"
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: node-context.extension-point.kuboard.cn
+    id: nodesResources
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 容器组资源监控
+      buttonTextEn: Monitor Pod Resource
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Compute Resources / Pod&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-compute-resources-pod') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-compute-resources-pod, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-namespace=${context.pod.metadata.namespace}&var-pod=${context.pod.metadata.name}&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: pod-context.extension-point.kuboard.cn
+    id: podResources
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 容器组网络监控
+      buttonTextEn: Monitor Pod Networking
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Networking / Pod&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-networking-pod') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-pods, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-namespace=${context.pod.metadata.namespace}&var-pod=${context.pod.metadata.name}&refresh=10s&var-resolution=30s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: pod-context.extension-point.kuboard.cn
+    id: podNetworking
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 节点上的容器组
+      buttonTextEn: Pods On Node
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Compute Resources / Node (Pods)&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-compute-resources-node-pods') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-compute-resources-node-pods, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-node=${context.node.metadata.name}&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: node-context.extension-point.kuboard.cn
+    id: nodePods
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: Kubelet 监控
+      buttonTextEn: Monitor Kubelet
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Kubelet&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-kubelet') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-kubelet, 请重新初始化套件')
+            } else {
+              let host = undefined
+              for (let add of context.node.status.addresses) {
+                if (add.type === 'InternalIP') {
+                  host = add.address
+                }
+              }
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-instance=${host}:${context.node.status.daemonEndpoints.kubeletEndpoint.Port}&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openKubeletMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: node-context.extension-point.kuboard.cn
+    id: kubelet
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 工作负载资源监控
+      buttonTextEn: Monitor Workload Resources
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Compute Resources / Workload&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-compute-resources-workload') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-compute-resources-workload, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-namespace=${context.workload.metadata.namespace}&var-workload=${context.workload.metadata.name}&var-type=${context.workload.kind.toLowerCase()}&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: workload-context.extension-point.kuboard.cn
+    id: workloadResources
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 工作负载网络监控
+      buttonTextEn: Monitor Workload Networking
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Networking / Workload&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-networking-workload') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-networking-workload, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-namespace=${context.workload.metadata.namespace}&var-workload=${context.workload.metadata.name}&var-type=${context.workload.kind.toLowerCase()}&var-resolution=30s&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: workload-context.extension-point.kuboard.cn
+    id: workloadNetworking
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 资源监控（Pods）
+      buttonTextEn: Monitor Resources (Pods)
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Compute Resources / Namespace (Pods)&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-compute-resources-namespace-pods') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-compute-resources-namespace-pods, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-namespace=${context.namespace.metadata.name}&var-resolution=30s&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: namespace-context.extension-point.kuboard.cn
+    id: namespacePodResources
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 网络监控（Pods）
+      buttonTextEn: Monitor Networking (Pods)
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Networking / Namespace (Pods)&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-networking-namespace-pods') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-networking-namespace-pods, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-namespace=${context.namespace.metadata.name}&var-resolution=30s&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: namespace-context.extension-point.kuboard.cn
+    id: namespacePodNetworking
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 资源监控（Deployments）
+      buttonTextEn: Monitor Resources (Deployments)
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Compute Resources / Namespace (Workloads)&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-compute-resources-namespace-workloads') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-compute-resources-namespace-workloads, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-namespace=${context.namespace.metadata.name}&var-type=deployment&var-resolution=30s&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: namespace-context.extension-point.kuboard.cn
+    id: namespaceDeploymentResources
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 网络监控（Deployments）
+      buttonTextEn: Monitor Networking (Deployments)
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Networking / Namespace (Workload)&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-networking-namespace-workload') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-networking-namespace-workload, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-namespace=${context.namespace.metadata.name}&var-type=deployment&var-resolution=30s&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: namespace-context.extension-point.kuboard.cn
+    id: namespaceDeploymentNetworking
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 资源监控（StatefulSets）
+      buttonTextEn: Monitor Resources (StatefulSets)
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Compute Resources / Namespace (Workloads)&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-compute-resources-namespace-workloads') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-compute-resources-namespace-workloads, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-namespace=${context.namespace.metadata.name}&var-type=statefulset&var-resolution=30s&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: namespace-context.extension-point.kuboard.cn
+    id: namespaceStatefulSetResources
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 网络监控（StatefulSets）
+      buttonTextEn: Monitor Networking (StatefulSets)
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Networking / Namespace (Workload)&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-networking-namespace-workload') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-networking-namespace-workload, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-namespace=${context.namespace.metadata.name}&var-type=statefulset&var-resolution=30s&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: namespace-context.extension-point.kuboard.cn
+    id: namespaceStatefulSetNetworking
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 资源监控（DaemonSets）
+      buttonTextEn: Monitor Resources (DaemonSets)
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Compute Resources / Namespace (Workloads)&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-compute-resources-namespace-workloads') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-compute-resources-namespace-workloads, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-namespace=${context.namespace.metadata.name}&var-type=daemonset&var-resolution=30s&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: namespace-context.extension-point.kuboard.cn
+    id: namespaceDaemonSetResources
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 网络监控（DaemonSets）
+      buttonTextEn: Monitor Networking (DaemonSets)
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Networking / Namespace (Workload)&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-networking-namespace-workload') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-networking-namespace-workload, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-namespace=${context.namespace.metadata.name}&var-type=daemonset&var-resolution=30s&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: namespace-context.extension-point.kuboard.cn
+    id: namespaceDaemonSetNetworking
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: Kubernetes APIServer 监控
+      buttonTextEn: Monitor Kubernetes APIServer
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / API server&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-api-server') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-api-server, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: cluster-context.extension-point.kuboard.cn
+    id: clusterAPIServer
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 资源监控
+      buttonTextEn: Monitor Resource
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Compute Resources / Cluster&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-compute-resources-cluster') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-compute-resources-cluster, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: cluster-context.extension-point.kuboard.cn
+    id: clusterResource
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 网络监控
+      buttonTextEn: Monitor Networking
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Networking / Cluster&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-networking-cluster') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-networking-cluster, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-resolution=30s&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: cluster-context.extension-point.kuboard.cn
+    id: clusterNetworking
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: Kubelet 监控
+      buttonTextEn: Monitor Kubelet
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / Kubelet&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-kubelet') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-kubelet, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: cluster-context.extension-point.kuboard.cn
+    id: clusterKubelet
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 资源使用监控
+      buttonTextEn: Monitor Resource Usage
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=USE Method / Cluster&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/use-method-cluster') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/use-method-cluster, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: cluster-context.extension-point.kuboard.cn
+    id: clusterUsage
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: API Server 监控
+      buttonTextEn: Monitor API Server
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=Kubernetes / API server&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/kubernetes-api-server') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/kubernetes-api-server, 请重新初始化套件')
+            } else {
+              let host = undefined
+              for (let add of context.node.status.addresses) {
+                if (add.type === 'InternalIP') {
+                  host = add.address
+                }
+              }
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&refresh=10s&var-instance=${host}:6443&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          if (context.node.metadata.labels['node-role.kubernetes.io/master'] !== undefined) {
+            return true
+          } else {
+            return false
+          }
+        }
+    extensionPoint: node-context.extension-point.kuboard.cn
+    id: nodeApiServer
+  - extensionParams:
+      buttonIcon: el-icon-data-line
+      buttonText: 资源使用情况
+      buttonTextEn: Resource Usage
+      buttonType: primary
+      handler: |
+        import { KuboardProxy, openUrlInBlank } from '/addon-api/index.js'
+
+        export function onClick({context, callback}) {
+          let grafanaHttp = new KuboardProxy({
+            namespace: 'kuboard',
+            service: 'grafana',
+            port: 3000,
+            protocol: 'http://'
+          })
+          grafanaHttp.execute({
+            method: 'get',
+            url: '/api/search?mode=tree&query=USE Method / Node&skipRecent=true&skipStarred=true&starred=false'
+          }).then(resp => {
+            let dashboardUrl = undefined
+            for (let item of resp.data) {
+              if (item.uri === 'db/use-method-node') {
+                dashboardUrl = item.url
+              }
+            }
+            if (dashboardUrl === undefined) {
+              return callback('未找到 dashboard: db/use-method-node, 请重新初始化套件')
+            } else {
+              let url = `${dashboardUrl}?orgId=1&var-datasource=prometheus&var-instance=${context.node.metadata.name}&refresh=10s&from=now-1h&to=now&kiosk=tv`
+              console.log('openPodMonitor', url)
+              openUrlInBlank(url)
+              return callback()
+            }
+          }).catch(e => {
+            return callback('调用 grafana 接口失败', e)
+          })
+        }
+      isEnabledFor: |
+        export function isEnabledFor (context) {
+          return true
+        }
+    extensionPoint: node-context.extension-point.kuboard.cn
+    id: nodeUsage
+  quickLinks:
+  - kuboardProxy:
+      namespace: kuboard
+      port: "3000"
+      protocol: http://
+      service: grafana
+    links:
+    - target: _blank
+      text: Grafana主页
+      textEn: Grafana HomePage
+      url: /
+  - kuboardProxy:
+      namespace: kuboard
+      port: "9090"
+      protocol: http://
+      service: prometheus-k8s
+    links:
+    - target: _blank
+      text: Prometheus主页
+      textEn: Prometheus Home Page
+      url: /
+  - kuboardProxy:
+      namespace: kuboard
+      port: "9093"
+      protocol: http://
+      service: alertmanager-main
+    links:
+    - target: _blank
+      text: 告警管理主页
+      textEn: Alert Manager Home Page
+      url: /
+  scope: Cluster
+status:
+  status: LOADED

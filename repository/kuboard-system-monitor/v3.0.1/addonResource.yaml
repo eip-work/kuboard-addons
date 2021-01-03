@@ -10109,6 +10109,7 @@ lifecycleHandler:
   additionalStep: >-
     <div style="font-size: 14px; color: red; font-weight: 500">请确认您的 Kuboard
     版本不低于 v3.0.0-beta.2</div>
+    <div style="font-size: 14px; color: red; font-weight: 500">本套件兼容 amd64 和 arm64 架构的 CPU</div>
   beforeUninstall: JavaScriptToExecuteBeforeUninstall
   disable: JavaScriptToExecuteBeforeDisable
   initialize: |
@@ -10124,16 +10125,49 @@ lifecycleHandler:
       console.log('finished')
     }
   install:
-  - alertmanagerConfigCustomResourceDefinition.yaml
-  - alertmanagerCustomResourceDefinition.yaml
-  - podmonitorCustomResourceDefinition.yaml
-  - probeCustomResourceDefinition.yaml
-  - prometheusCustomResourceDefinition.yaml
-  - prometheusruleCustomResourceDefinition.yaml
+    - alertmanagerConfigCustomResourceDefinition.yaml
+    - alertmanagerCustomResourceDefinition.yaml
+    - podmonitorCustomResourceDefinition.yaml
+    - probeCustomResourceDefinition.yaml
+    - prometheusCustomResourceDefinition.yaml
+    - prometheusruleCustomResourceDefinition.yaml
+  images: {
+    'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/alertmanager:v0.21.0': 'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/alertmanager:v0.21.0',
+    'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/prometheus-operator:v0.44.0': 'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/prometheus-operator:v0.44.0',
+    'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/node-exporter:v1.0.1': 'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/node-exporter:v1.0.1',
+    'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/prometheus:v2.22.1': 'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/prometheus:v2.22.1',
+    'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/kube-state-metrics:v1.9.7': 'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/kube-state-metrics:v1.9.7',
+    'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/kube-rbac-proxy:v0.8.0': 'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/kube-rbac-proxy:v0.8.0',
+    'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/grafana:7.3.5': 'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/grafana:7.3.5',
+    'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/k8s-prometheus-adapter:v0.8.2': 'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/k8s-prometheus-adapter:v0.8.2',
+    'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/prometheus-config-reloader:v0.44.0': 'swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/prometheus-config-reloader:v0.44.0'
+  }
 metadata:
   name: system-monitor.addons.kuboard.cn
   namespace: kuboard
-parameters: []
+parameters:
+  - default: '2'
+    description: Prometheus 实例数量
+    descriptionEn: Prometheus replicas
+    name: PROMETHEUS_REPLICAS
+    required: true
+    type: integer
+    value: '2'
+  - default: please-provide-a-valid-storage-class-name
+    description: 为 Prometheus 提供存储空间的 StorageClass
+    descriptionEn: StorageClass that is used by Prometheus
+    name: PROMETHEUS_STORAGE_CLASS
+    required: true
+    type: string
+    value: please-provide-a-valid-storage-class-name
+  - default: '40Gi'
+    description: 为每个 Prometheus 实例分配的存储卷大小
+    descriptionEn: Storage capacity allocated for each instance of prometheus
+    name: PROMETHEUS_STORAGE_SIZE_PER_VOLUME
+    required: true
+    type: string
+    value: '40Gi'
+
 
 
 ---
@@ -10276,8 +10310,8 @@ k8sYamls:
           containers:
           - args:
             - --kubelet-service=kube-system/kubelet
-            - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.44.0
-            image: quay.io/prometheus-operator/prometheus-operator:v0.44.0
+            - --prometheus-config-reloader=swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/prometheus-config-reloader:v0.44.0
+            image: swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/prometheus-operator:v0.44.0
             name: prometheus-operator
             ports:
             - containerPort: 8080
@@ -10296,7 +10330,7 @@ k8sYamls:
             - --secure-listen-address=:8443
             - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
             - --upstream=http://127.0.0.1:8080/
-            image: quay.io/brancz/kube-rbac-proxy:v0.8.0
+            image: swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/kube-rbac-proxy:v0.8.0
             name: kube-rbac-proxy
             ports:
             - containerPort: 8443
@@ -14060,34 +14094,8 @@ lifecycleHandler:
   - thanosrulerCustomResourceDefinition.yaml
   - servicemonitorCustomResourceDefinition.yaml
 metadata:
-  creationTimestamp: "2020-12-07T13:17:36Z"
-  generation: 6
-  managedFields:
-  - apiVersion: kuboard.cn/v1
-    fieldsType: FieldsV1
-    fieldsV1:
-      f:initResources: {}
-      f:isPreInstallScript: {}
-      f:k8sYamls:
-        .: {}
-        f:clusterRole.yaml: {}
-        f:clusterRoleBinding.yaml: {}
-        f:deployment.yaml: {}
-        f:service.yaml: {}
-        f:serviceAccount.yaml: {}
-        f:servicemonitorCustomResourceDefinition.yaml: {}
-        f:thanosrulerCustomResourceDefinition.yaml: {}
-      f:lifecycleHandler:
-        .: {}
-        f:install: {}
-    manager: Mozilla
-    operation: Update
-    time: "2020-12-09T13:37:23Z"
   name: system-monitor.addons.kuboard.cn-1
   namespace: kuboard
-  resourceVersion: "813090"
-  selfLink: /apis/kuboard.cn/v1/namespaces/kuboard/kuboardaddonresources/system-monitor.addons.kuboard.cn-1
-  uid: a1afd6a5-a1f9-4df4-a623-5393d810ba4f
 
 ---
 apiVersion: kuboard.cn/v1
@@ -14103,7 +14111,7 @@ k8sYamls:
       name: main
       namespace: kuboard
     spec:
-      image: quay.io/prometheus/alertmanager:v0.21.0
+      image: swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/alertmanager:v0.21.0
       nodeSelector:
         kubernetes.io/os: linux
       replicas: 3
@@ -14255,7 +14263,7 @@ k8sYamls:
             app: grafana
         spec:
           containers:
-          - image: grafana/grafana:7.3.5
+          - image: swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/grafana:7.3.5
             name: grafana
             env:
               - name: GF_AUTH_PROXY_ENABLED
@@ -14644,14 +14652,14 @@ k8sYamls:
             - --port=8081
             - --telemetry-host=127.0.0.1
             - --telemetry-port=8082
-            image: quay.io/coreos/kube-state-metrics:v1.9.7
+            image: swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/kube-state-metrics:v1.9.7
             name: kube-state-metrics
           - args:
             - --logtostderr
             - --secure-listen-address=:8443
             - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
             - --upstream=http://127.0.0.1:8081/
-            image: quay.io/brancz/kube-rbac-proxy:v0.8.0
+            image: swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/kube-rbac-proxy:v0.8.0
             name: kube-rbac-proxy-main
             ports:
             - containerPort: 8443
@@ -14665,7 +14673,7 @@ k8sYamls:
             - --secure-listen-address=:9443
             - --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
             - --upstream=http://127.0.0.1:8082/
-            image: quay.io/brancz/kube-rbac-proxy:v0.8.0
+            image: swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/kube-rbac-proxy:v0.8.0
             name: kube-rbac-proxy-self
             ports:
             - containerPort: 9443
@@ -14803,7 +14811,7 @@ k8sYamls:
             - --no-collector.wifi
             - --no-collector.hwmon
             - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
-            image: quay.io/prometheus/node-exporter:v1.0.1
+            image: swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/node-exporter:v1.0.1
             name: node-exporter
             resources:
               limits:
@@ -14835,7 +14843,7 @@ k8sYamls:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-            image: quay.io/brancz/kube-rbac-proxy:v0.8.0
+            image: swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/kube-rbac-proxy:v0.8.0
             name: kube-rbac-proxy
             ports:
             - containerPort: 9100
@@ -15090,7 +15098,7 @@ k8sYamls:
             - --metrics-relist-interval=1m
             - --prometheus-url=http://prometheus-k8s.kuboard.svc:9090/
             - --secure-port=6443
-            image: directxman12/k8s-prometheus-adapter:v0.8.2
+            image: swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/k8s-prometheus-adapter:v0.8.2
             name: prometheus-adapter
             ports:
             - containerPort: 6443
@@ -15241,19 +15249,26 @@ k8sYamls:
       name: k8s
       namespace: kuboard
     spec:
+      storage:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: ${PROMETHEUS_STORAGE_CLASS}
+            resources:
+              requests:
+                storage: ${PROMETHEUS_STORAGE_SIZE_PER_VOLUME}
       alerting:
         alertmanagers:
         - name: alertmanager-main
           namespace: kuboard
           port: web
-      image: quay.io/prometheus/prometheus:v2.22.1
+      image: swr.cn-east-2.myhuaweicloud.com/kuboard-dependency/prometheus:v2.22.1
       nodeSelector:
         kubernetes.io/os: linux
       podMonitorNamespaceSelector: {}
       podMonitorSelector: {}
       probeNamespaceSelector: {}
       probeSelector: {}
-      replicas: 2
+      replicas: ${PROMETHEUS_REPLICAS}
       resources:
         requests:
           memory: 400Mi
@@ -17830,27 +17845,8 @@ lifecycleHandler:
   install:
   - resources.yaml
 metadata:
-  creationTimestamp: "2020-12-07T14:39:08Z"
-  generation: 12
-  managedFields:
-  - apiVersion: kuboard.cn/v1
-    fieldsType: FieldsV1
-    fieldsV1:
-      f:initResources: {}
-      f:k8sYamls:
-        .: {}
-        f:resources.yaml: {}
-      f:lifecycleHandler:
-        .: {}
-        f:install: {}
-    manager: Mozilla
-    operation: Update
-    time: "2020-12-12T10:04:22Z"
   name: system-monitor.addons.kuboard.cn-2
   namespace: kuboard
-  resourceVersion: "1040774"
-  selfLink: /apis/kuboard.cn/v1/namespaces/kuboard/kuboardaddonresources/system-monitor.addons.kuboard.cn-2
-  uid: a598ac5a-c15d-4655-94e4-bbfa385c905f
 
 
 ---
@@ -29513,27 +29509,8 @@ lifecycleHandler:
   install:
   - dashboard-definitions.yaml
 metadata:
-  creationTimestamp: "2020-12-07T14:53:00Z"
-  generation: 2
-  managedFields:
-  - apiVersion: kuboard.cn/v1
-    fieldsType: FieldsV1
-    fieldsV1:
-      f:initResources: {}
-      f:k8sYamls:
-        .: {}
-        f:dashboard-definitions.yaml: {}
-      f:lifecycleHandler:
-        .: {}
-        f:install: {}
-    manager: Mozilla
-    operation: Update
-    time: "2020-12-07T14:54:40Z"
   name: system-monitor.addons.kuboard.cn-4
   namespace: kuboard
-  resourceVersion: "761381"
-  selfLink: /apis/kuboard.cn/v1/namespaces/kuboard/kuboardaddonresources/system-monitor.addons.kuboard.cn-4
-  uid: d2665d4f-945b-4b7d-aaf9-b0800faa4c76
 
 ---
 apiVersion: kuboard.cn/v1
@@ -40087,27 +40064,8 @@ lifecycleHandler:
   install:
   - dashboard-definitions.yaml
 metadata:
-  creationTimestamp: "2020-12-07T14:48:08Z"
-  generation: 3
-  managedFields:
-  - apiVersion: kuboard.cn/v1
-    fieldsType: FieldsV1
-    fieldsV1:
-      f:initResources: {}
-      f:k8sYamls:
-        .: {}
-        f:dashboard-definitions.yaml: {}
-      f:lifecycleHandler:
-        .: {}
-        f:install: {}
-    manager: Mozilla
-    operation: Update
-    time: "2020-12-07T14:54:39Z"
   name: system-monitor.addons.kuboard.cn-3
   namespace: kuboard
-  resourceVersion: "761375"
-  selfLink: /apis/kuboard.cn/v1/namespaces/kuboard/kuboardaddonresources/system-monitor.addons.kuboard.cn-3
-  uid: 0d006f46-10ae-426d-bda2-530c2b97522c
 
 ---
 apiVersion: kuboard.cn/v1
@@ -52294,24 +52252,5 @@ lifecycleHandler:
   install:
   - dashboard-definitions.yaml
 metadata:
-  creationTimestamp: "2020-12-07T14:55:08Z"
-  generation: 2
-  managedFields:
-  - apiVersion: kuboard.cn/v1
-    fieldsType: FieldsV1
-    fieldsV1:
-      f:initResources: {}
-      f:k8sYamls:
-        .: {}
-        f:dashboard-definitions.yaml: {}
-      f:lifecycleHandler:
-        .: {}
-        f:install: {}
-    manager: Mozilla
-    operation: Update
-    time: "2020-12-07T15:15:40Z"
   name: system-monitor.addons.kuboard.cn-5
   namespace: kuboard
-  resourceVersion: "766642"
-  selfLink: /apis/kuboard.cn/v1/namespaces/kuboard/kuboardaddonresources/system-monitor.addons.kuboard.cn-5
-  uid: 33fe3dc4-4654-42b6-bed2-c15695119cd1
