@@ -2,26 +2,26 @@
   {
     "name": "资源层监控套件",
     "id": "system-monitor.addons.kuboard.cn",
-    "version": "v3.0.2",
-    "lastUpdate": "2021-1-5",
+    "version": "v3.0.3",
+    "lastUpdate": "2021-1-19",
     "maintainer": "shaohq@foxmail.com",
     "scope": "Cluster",
     "description": "基于Prometheus/Grafana提供K8S集群的资源监控能力",
-    "document": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.2/README.md",
-    "addonUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.2/addon.yaml",
-    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.2/addonResource.yaml"
+    "document": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.3/README.md",
+    "addonUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.3/addon.yaml",
+    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-system-monitor/v3.0.3/addonResource.yaml"
   },
   {
     "name": "日志聚合套件",
     "id": "logs-loki.addons.kuboard.cn",
-    "version": "v3.0.3",
-    "lastUpdate": "2020-12-30",
+    "version": "v3.0.4",
+    "lastUpdate": "2020-1-19",
     "maintainer": "shaohq@foxmail.com",
     "scope": "Cluster",
     "description": "基于Grafana/Loki/Promtail提供集群级别的日志聚合",
-    "document": "https://addons.kuboard.cn/kuboard-loki/v3.0.3/README.md",
-    "addonUrl": "https://addons.kuboard.cn/kuboard-loki/v3.0.3/addon.yaml",
-    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-loki/v3.0.3/addonResource.yaml"
+    "document": "https://addons.kuboard.cn/kuboard-loki/v3.0.4/README.md",
+    "addonUrl": "https://addons.kuboard.cn/kuboard-loki/v3.0.4/addon.yaml",
+    "addonResourceUrl": "https://addons.kuboard.cn/kuboard-loki/v3.0.4/addonResource.yaml"
   },
   {
     "name": "存储卷浏览器",
