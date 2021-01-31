@@ -4,22 +4,22 @@
     "releaseNote": "https://kuboard.cn/support/change-log/v3.x.html",
     "channel": {
       "canary": {
-        "version": "v3.0.0.3",
-        "buildDate": "2021-01-17 17:52:54",
+        "version": "v3.0.0.5",
+        "buildDate": "2021-01-31 19:32:24",
         "applyToK8sVersion": "v1.1",
         "breakingUpgrade": "https://kuboard.cn/support/change-log/upgrade-2-3.html"
       },
       "latest": {
-        "version": "v3.0.0.3",
-        "buildDate": "2021-01-17 17:52:54"
+        "version": "v3.0.0.5",
+        "buildDate": "2021-01-31 19:32:24"
       },
       "alpha": {
-        "version": "v3.0.0.3",
-        "buildDate": "2021-01-17 17:52:54"
+        "version": "v3.0.0.5",
+        "buildDate": "2021-01-31 19:32:24"
       },
       "beta": {
-        "version": "v3.0.0.3",
-        "buildDate": "2021-01-17 17:52:54"
+        "version": "v3.0.0.5",
+        "buildDate": "2021-01-31 19:32:24"
       }
     }
   }
